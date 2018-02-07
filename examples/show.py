@@ -32,6 +32,61 @@ from NTMDTRead.palettes.Rainbows import Rainbow1
 from NTMDTRead.palettes.Stylish import BasicRed
 palettes=[Rainbow1, BasicRed]
 
+from vispy import app, scene
+import scipy as np
+
+def plot3d(m, bn):
+	for i, fr in enumerate(m.parsed.frames.frames):
+		#fr.main.frame_data.image, cmap=random.choice(palettes), extent=(0, w_mag, 0, h_mag)
+		xs=np.linspace(0, 1, fr.main.frame_data.image.shape[0])
+		ys=np.linspace(0, 1, fr.main.frame_data.image.shape[1])
+		
+		canvas = scene.SceneCanvas(keys='interactive', title=bn)
+		view = canvas.central_widget.add_view()
+		view.camera = scene.TurntableCamera(up='z')
+
+		# Simple surface plot example
+		# x, y values are not specified, so assumed to be 0:50
+		p1 = scene.visuals.SurfacePlot(
+			x=xs,y=ys,
+			z=fr.main.frame_data.image
+			#,shading='smooth'
+		)
+		#p1.attach(scene.filters.ZColormapFilter(random.choice(palettes)))
+		#p1.attach(scene.filters.ZColormapFilter("fire"))
+		view.add(p1)
+
+		# Add a 3D axis to keep us oriented
+		axis = scene.visuals.XYZAxis(parent=view.scene)
+		canvas.show()
+		app.run()
+
+def plot2d(m, bn):
+	for i, fr in enumerate(m.parsed.frames.frames):
+		#try:
+		fig, ax = plt.subplots()
+		
+		if hasattr(m.size[0], "magnitude"):
+			w_mag=m.size[0].magnitude
+		else:
+			w_mag=m.size[0]
+		
+		if hasattr(m.size[1], "magnitude"):
+			h_mag=m.size[1].magnitude
+		else:
+			h_mag=m.size[1]
+		
+		ax.imshow(fr.main.frame_data.image, cmap=random.choice(palettes), extent=(0, w_mag, 0, h_mag))
+		ax.set_title(
+			bn+" : ["+str(i)+"] "+fr.main.frame_data.title.title+"\n"+
+			str(m.parsed.frames.frames[0].main.type)
+		)
+		ax.set_xlabel(m.size[0])
+		ax.set_ylabel(m.size[1])
+		
+		fig.show()
+		plt.show(block=True)
+
 def processFilesFromTestFolder(globExpr=testDataDir, moveBad=None, saveImages=None):
 	"""Shows frames from scans and moves badly parsed ones into a specified folder for investigation"""
 	if not globExpr.endswith(".mdt"):
@@ -43,30 +98,8 @@ def processFilesFromTestFolder(globExpr=testDataDir, moveBad=None, saveImages=No
 		bn=os.path.basename(fn)
 		try:
 			m=NTMDTReader(fn)
-			for i, fr in enumerate(m.parsed.frames.frames):
-				#try:
-				fig, ax = plt.subplots()
-				
-				if hasattr(m.size[0], "magnitude"):
-					w_mag=m.size[0].magnitude
-				else:
-					w_mag=m.size[0]
-				
-				if hasattr(m.size[1], "magnitude"):
-					h_mag=m.size[1].magnitude
-				else:
-					h_mag=m.size[1]
-				
-				ax.imshow(fr.main.frame_data.image, cmap=random.choice(palettes), extent=(0, w_mag, 0, h_mag))
-				ax.set_title(
-					bn+" : ["+str(i)+"] "+fr.main.frame_data.title.title+"\n"+
-					str(m.parsed.frames.frames[0].main.type)
-				)
-				ax.set_xlabel(m.size[0])
-				ax.set_ylabel(m.size[1])
-				
-				fig.show()
-				plt.show(block=True)
+			plot3d(m, bn)
+			
 		except Exception as ex:
 			print("failed:", ex)
 			if moveBad:
