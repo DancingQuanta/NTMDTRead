@@ -327,9 +327,7 @@ class NTMDTReader():
 		self.parsed=NtMdt.from_file(file) # problems with closed files
 		self.frames=[]
 		for i, fr in enumerate(self.parsed.frames.frames):
-			fr=self.makeFrame(fr)
-			fr.index=i
-			fr.reader=self
+			fr=self.makeFrame(fr, i)
 			self.frames.append(fr)
 	
 	def getCtor(fr):
@@ -339,5 +337,8 @@ class NTMDTReader():
 		else:
 			return NTMDTFrame
 	
-	def makeFrame(self, fr):
-		return self.__class__.getCtor(fr)(fr)
+	def makeFrame(self, fr, i):
+		fr = self.__class__.getCtor(fr)(fr)
+		fr.index=i
+		fr.reader=self
+		return fr
