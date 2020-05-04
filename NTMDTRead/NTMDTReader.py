@@ -34,10 +34,11 @@ def parseXML(source):
 
 
 class NTMDTFrame(object):
-	def __init__(self, fr):
+	def __init__(self, fr, parent):
 		super().__init__()
 		self._frame=fr
 		self._xml=None
+		self._parent = parent
 	
 	@property
 	def xml(self):
@@ -68,7 +69,7 @@ class NTMDTFrame(object):
 		return self._frame.main.type
 	
 	def makePlotTitle(self):
-		return str(self.reader.fileName)+"\n["+str(self.index)+"] "+str(self.title)+"\n"+str(self.dateTime)+"\n"+ str(self.type)
+		return str(self._parent.fileName)+"\n["+str(self.index)+"] "+str(self.title)+"\n"+str(self.dateTime)+"\n"+ str(self.type)
 	
 	def __repr__(self):
 		return self.__class__.__name__ + " " + str(self.type) + " " + str(self.date) + " ["+str(self.index)+"]"
@@ -77,8 +78,8 @@ class NTMDTFrame(object):
 		raise NotImplementedError("Showing is not implemented for frame type "+str(self.type))
 
 class NTMDTTextFrame(NTMDTFrame):
-	def __init__(self, fr):
-		super().__init__(fr)
+	def __init__(self, fr, parent):
+		super().__init__(fr, parent)
 		main=fr.main
 		data=main.frame_data
 		try:
@@ -101,8 +102,8 @@ class NTMDTNDimensionalDataFrame(NTMDTFrame):
 
 
 class NTMDTGraphicFrame(NTMDTNDimensionalDataFrame):
-	def __init__(self, fr):
-		super().__init__(fr)
+	def __init__(self, fr, parent):
+		super().__init__(fr, parent)
 		main=fr.main
 		data=main.frame_data
 		self.data=None
@@ -142,8 +143,8 @@ class NTMDTCurveFrame(NTMDTNDimensionalDataFrame):
 	def __repr__(self):
 		return super().__repr__() + " <"+repr(self.size)+", ("+repr(self.data.shape)+")>"
 	
-	def __init__(self, fr):
-		super().__init__(fr)
+	def __init__(self, fr, parent):
+		super().__init__(fr, parent)
 
 
 class NTMDTMetadataFrame(NTMDTGraphicFrame, NTMDTCurveFrame):
@@ -184,8 +185,8 @@ class NTMDTMetadataFrame(NTMDTGraphicFrame, NTMDTCurveFrame):
 	def makeSizeQuantities(dims, transform=True):
 		return tuple(( __class__.makeSizeQuantity(dim, transform) for dim in dims ))
 	
-	def __init__(self, fr):
-		super().__init__(fr)
+	def __init__(self, fr, parent):
+		super().__init__(fr, parent)
 		main=fr.main
 		data=main.frame_data
 		cals=data.calibrations
@@ -247,8 +248,8 @@ class NTMDTScannedFrame(NTMDTGraphicFrame, NTMDTCurveFrame):
 		return tuple(( __class__.makeSizeQuantity(*a, transform=transform) for a in zip(sizesInDots, scales) ))
 	
 	
-	def __init__(self, fr):
-		super().__init__(fr)
+	def __init__(self, fr, parent):
+		super().__init__(fr, parent)
 		main=fr.main
 		frame_data=main.frame_data
 		
@@ -338,7 +339,6 @@ class NTMDTReader():
 			return NTMDTFrame
 	
 	def makeFrame(self, fr, i):
-		fr = self.__class__.getCtor(fr)(fr)
+		fr = self.__class__.getCtor(fr)(fr, self)
 		fr.index=i
-		fr.reader=self
 		return fr
